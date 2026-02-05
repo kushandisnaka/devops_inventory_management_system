@@ -5,15 +5,15 @@ pipeline {
     BACKEND_IMAGE = "kdk5155/backend"
     FRONTEND_IMAGE = "kdk5155/frontend"
     APP_EC2_USER = "ubuntu"
-    APP_EC2_IP = "13.48.126.126"
+    APP_EC2_IP = "13.49.125.245"
   }
 
   stages {
-    stage('Checkout') {
-      steps {
-        git 'https://github.com/kushandisnaka/devops_inventory_management_system.git'
-      }
-    }
+    stage('Checkout Code') {
+  steps {
+    git branch: 'main', url: 'https://github.com/kushandisnaka/devops_inventory_management_system.git'
+  }
+}
 
     stage('Build Backend Docker Image') {
       steps {
