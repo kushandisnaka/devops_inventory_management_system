@@ -1,105 +1,72 @@
 pipeline {
-    agent none
+  agent any
 
-    stages {
+  environment {
+    BACKEND_IMAGE = "kdk5155/backend"
+    FRONTEND_IMAGE = "kdk5155/frontend"
+    APP_EC2_USER = "ubuntu"
+    APP_EC2_IP = "13.48.126.126"
+  }
 
-        stage('Provision EC2') {
-            agent { label 'built-in' }
-            steps {
-                dir('/home/jenkins/tf-ec2') {
-                    sh 'terraform apply -auto-approve'
-                }
-            }
-        }
-
-        stage('Wait for node') {
-            agent { label 'built-in' }
-            steps {
-                timeout(time: 10, unit: 'MINUTES') {
-                    waitUntil {
-                        script {
-                            def node = Jenkins.instance.getNode('docker-builder')
-                            node.toComputer()?.isOnline() == true
-                        }
-                    }
-                }
-            }
-        }
-
-        
-        stage('Clone Repository') {
-            agent { label 'docker-builder' }
-            steps {
-                git branch: 'main',
-                    url: 'https://github.com/kushandisnaka/devops_inventory_management_system.git'
-            }
-        }
-
-        stage('Build FrontEnd') {
-            agent { label 'docker-builder' }
-            steps {
-                sh 'docker build -t $FRONTEND_IMAGE:$BUILD_NUMBER -t $FRONTEND_IMAGE:latest ./frontend'
-            }
-        }
-        
-        stage('Build BackEnd') {
-            agent { label 'docker-builder' }
-            steps {
-                sh 'docker build -t $BACKEND_IMAGE:$BUILD_NUMBER -t $BACKEND_IMAGE:latest ./backend'
-            }
-        }
-                
-        stage('Login to DockerHub') {
-            steps {
-                withCredentials([string(credentialsId: 'docker_hub_password', variable: 'DOCKER_PASS')]) {
-                    sh '''
-                        echo "$DOCKER_PASS" | docker login -u kdk5155 --password-stdin
-                    '''
-                }
-            }
-        }
-        
-        stage('Push FrontEnd Image') {
-            agent { label 'docker-builder' }
-            steps {
-                sh 'docker push $FRONTEND_IMAGE:$BUILD_NUMBER'
-                sh 'docker push $FRONTEND_IMAGE:latest'
-            }
-        }
-        
-        stage('Push BackEnd Image') {
-            agent { label 'docker-builder' }
-            steps {
-                sh 'docker push $BACKEND_IMAGE:$BUILD_NUMBER'
-                sh 'docker push $BACKEND_IMAGE:latest'
-            }
-        }
-        
-        stage('Docker Logout') {
-            agent { label 'docker-builder' }
-            steps {
-                sh 'docker logout'
-            }
-        }
-
-        stage('Destroying EC2') {
-            agent { label 'built-in' }
-            steps {
-                dir('/home/jenkins/tf-ec2') {
-                    sh 'terraform destroy -auto-approve'
-                }
-            }
-        }
-        stage('Deploy Containers') {
-            agent { label 'built-in' }
-            steps {
-                sh '''
-                  /home/jenkins/ansible/venv/bin/ansible-playbook \
-                    -i /home/jenkins/ansible/inventory \
-                    /home/jenkins/ansible/redeploy.yml
-                '''
-            }
-        }
-
+  stages {
+    stage('Checkout') {
+      steps {
+        git 'https://github.com/kushandisnaka/devops_inventory_management_system.git'
+      }
     }
+
+    stage('Build Backend Docker Image') {
+      steps {
+        sh 'docker build -t $BACKEND_IMAGE:latest backend/'
+      }
+    }
+
+    stage('Build Frontend Docker Image') {
+      steps {
+        sh 'docker build -t $FRONTEND_IMAGE:latest frontend/'
+      }
+    }
+
+    stage('Push Docker Images') {
+      steps {
+        withCredentials([string(credentialsId: 'docker_secret', variable: 'dockerhub_creds')]) 
+     {
+          sh '''
+            echo $dockerhub_creds | docker login -u kdk5155 --password-stdin
+            docker push $BACKEND_IMAGE:latest
+            docker push $FRONTEND_IMAGE:latest
+          '''
+        }
+      }
+    }
+
+    stage('Terraform Apply') {
+      when { expression { fileExists('terraform/main.tf') } }
+      steps {
+        sh '''
+          cd terraform
+          terraform init
+          terraform apply -auto-approve
+        '''
+      }
+    }
+
+    stage('Deploy to App EC2') {
+      steps {
+        sshagent(['app-ec2-key']) {
+          sh '''
+            ssh -o StrictHostKeyChecking=no $APP_EC2_USER@$APP_EC2_IP "
+              docker stop backend || true
+              docker rm backend || true
+              docker run -d --name backend -p 5000:5000 $BACKEND_IMAGE:latest
+
+              docker stop frontend || true
+              docker rm frontend || true
+              docker run -d --name frontend -p 3000:5173 $FRONTEND_IMAGE:latest
+            "
+          '''
+        }
+      }
+    }
+  }
 }
