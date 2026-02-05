@@ -62,7 +62,7 @@ export default function LoginSignup({ setIsLoggedIn }) {
             confirmPassword: formData.confirmPassword
           };
 
-      const response = await fetch(`http://localhost:5000${endpoint}`, {
+      const response = await fetch(`http://13.49.125.245:5000${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
