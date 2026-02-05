@@ -91,7 +91,7 @@ export default function LoginSignup({ setIsLoggedIn }) {
       }
     } catch (error) {
       console.error('Error:', error);
-      setError('Failed to connect to server. Make sure the backend is running on http://localhost:5000');
+      setError('Failed to connect to server. Make sure the backend is running on http://13.49.125.245:5000');
     }
   };
 
