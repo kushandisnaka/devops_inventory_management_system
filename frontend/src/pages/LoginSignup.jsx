@@ -62,7 +62,7 @@ export default function LoginSignup({ setIsLoggedIn }) {
             confirmPassword: formData.confirmPassword
           };
 
-      const response = await fetch(`http://13.49.125.245:5000${endpoint}`, {
+      const response = await fetch(`http://backend:5000${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -91,7 +91,7 @@ export default function LoginSignup({ setIsLoggedIn }) {
       }
     } catch (error) {
       console.error('Error:', error);
-      setError('Failed to connect to server. Make sure the backend is running on http://13.49.125.245:5000');
+      setError('Failed to connect to server. Make sure the backend is running on http://backend:5000');
     }
   };
 
