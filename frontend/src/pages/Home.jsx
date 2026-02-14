@@ -89,7 +89,7 @@ export default function Home({ setIsLoggedIn }) {
               <div className="stat-icon">💰</div>
               <div className="stat-content">
                 <h3>Total Value</h3>
-                <p className="stat-value">${totalValue.toFixed(2)}</p>
+                <p className="stat-value">Rs.{totalValue.toFixed(2)}</p>
               </div>
             </div>
 
@@ -144,9 +144,9 @@ export default function Home({ setIsLoggedIn }) {
                             {item.quantity}
                           </span>
                         </td>
-                        <td>${item.value.toFixed(2)}</td>
+                        <td>Rs.{item.value.toFixed(2)}</td>
                         <td className="total-value">
-                          ${(item.quantity * item.value).toFixed(2)}
+                          Rs.{(item.quantity * item.value).toFixed(2)}
                         </td>
                         <td>
                           <button
