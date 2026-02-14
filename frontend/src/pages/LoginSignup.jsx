@@ -111,7 +111,7 @@ export default function LoginSignup({ setIsLoggedIn }) {
       <div className="auth-wrapper">
         <div className="auth-card">
           <div className="auth-header">
-            <h1>{isLogin ? 'Welcome Back' : 'Create Account'}</h1>
+            <h1>{isLogin ? 'Kushan' : 'Create Account'}</h1>
             <p>{isLogin ? 'Sign in to your inventory system' : 'Join us to manage your inventory'}</p>
           </div>
 
